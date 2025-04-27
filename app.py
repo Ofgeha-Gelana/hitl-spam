@@ -7,16 +7,16 @@ import os
 from sklearn.metrics import accuracy_score, confusion_matrix
 from modAL.uncertainty import uncertainty_sampling
 from utils.data_loader import load_data
-from utils.model_utils import load_model
+from utils.model_utils import load_model, create_active_learner
 from active_learning import initialize_active_learner, save_feedback, save_active_learner
 
-# Create required directories
+# Initialize directories
 os.makedirs('models', exist_ok=True)
 os.makedirs('data', exist_ok=True)
 os.makedirs('results', exist_ok=True)
 
 def init_session():
-    """Initialize session state with comprehensive error handling"""
+    """Initialize session state with complete error handling"""
     try:
         if 'initialized' not in st.session_state:
             # Load data
@@ -24,50 +24,65 @@ def init_session():
              y_train, y_test,
              vectorizer, original_texts) = load_data()
             
+            # Validate pool sizes
+            if X_train_vec.shape[0] != len(original_texts):
+                raise ValueError("Feature and text pool size mismatch")
+            
             # Store in session state
             st.session_state.update({
                 'X_pool': X_train_vec,
                 'y_pool': y_train,
                 'vectorizer': vectorizer,
                 'original_texts': original_texts,
+                'remaining_texts': original_texts.copy(),
+                'remaining_indices': np.arange(len(original_texts)),
                 'initialized': True
             })
             
-            # Initialize learner
-            try:
-                st.session_state.learner, st.session_state.feedback_df = initialize_active_learner()
-            except Exception as e:
-                st.error(f"Failed to initialize learner: {str(e)}")
-                st.session_state.learner = None
-                
+            # Initialize learner and feedback
+            st.session_state.learner, st.session_state.feedback_df = initialize_active_learner()
+            
     except Exception as e:
-        st.error(f"Fatal error during initialization: {str(e)}")
+        st.error(f"Application initialization failed: {str(e)}")
         st.stop()
 
 def get_new_sample():
-    """Get the most uncertain sample from the pool with error handling"""
+    """Get a new sample with robust pool management"""
     try:
-        if not hasattr(st.session_state, 'learner') or st.session_state.learner is None:
-            raise ValueError("Learner not initialized")
+        # Check if pool is empty
+        if len(st.session_state.remaining_indices) == 0:
+            st.warning("No more samples available! Reset pool to continue.")
+            return None
             
-        query_idx, query_inst = uncertainty_sampling(
+        # Get the active pool subset
+        active_pool = st.session_state.X_pool[st.session_state.remaining_indices]
+        
+        # Find uncertain sample from active pool
+        query_idx, _ = uncertainty_sampling(
             st.session_state.learner,
-            st.session_state.X_pool
+            active_pool
         )
         
-        # Safely get text from Series
-        text = str(st.session_state.original_texts.iloc[query_idx])
-        if not text.strip():
-            raise ValueError("Empty text sample retrieved")
-            
-        return text
+        # Get the actual index in original pool
+        actual_idx = st.session_state.remaining_indices[query_idx]
+        
+        # Get the text sample
+        sample_text = str(st.session_state.original_texts.iloc[actual_idx])
+        
+        # Remove from remaining indices
+        st.session_state.remaining_indices = np.delete(
+            st.session_state.remaining_indices,
+            query_idx
+        )
+        
+        return sample_text.strip()
         
     except Exception as e:
-        st.error(f"Error getting sample: {str(e)}")
+        st.error(f"Sample retrieval error: {str(e)}")
         return None
 
 def plot_confusion_matrix(model, X, y, ax, title):
-    """Plot confusion matrix with validation"""
+    """Plot confusion matrix with error handling"""
     try:
         preds = model.predict(X.toarray())
         cm = confusion_matrix(y, preds)
@@ -76,7 +91,6 @@ def plot_confusion_matrix(model, X, y, ax, title):
         ax.set_xlabel("Predicted")
         ax.set_ylabel("Actual")
     except Exception as e:
-        print(f"Error plotting confusion matrix: {str(e)}")
         ax.set_title(f"Error: {str(e)}")
 
 def main():
@@ -89,48 +103,70 @@ def main():
     # Initialize session
     init_session()
     
-    # Check if initialization succeeded
-    if not st.session_state.get('initialized', False) or st.session_state.learner is None:
-        st.error("""
-            Application failed to initialize. Possible causes:
-            - Missing or invalid data file (data/spam.csv)
-            - Corrupted model files
-            - Insufficient system resources
-        """)
+    # Check initialization
+    if not st.session_state.get('initialized', False):
+        st.error("Application failed to initialize. Please check the data files.")
         st.stop()
     
     st.title("📧 Human-in-the-Loop Spam Classifier")
     st.markdown("""
-        Help improve our spam detection model by reviewing predictions!
-        The system will learn from your feedback to become more accurate over time.
+        Review uncertain predictions to help improve the spam detection model.
+        The system learns from your corrections!
     """)
     
-    # Sidebar stats
+    # Sidebar controls
     with st.sidebar:
         st.header("📊 Dashboard")
+        
+        # Sample tracking
+        total_samples = len(st.session_state.original_texts)
+        remaining = len(st.session_state.remaining_indices)
+        reviewed = total_samples - remaining
+        st.metric("Total Samples", total_samples)
+        st.metric("Remaining Samples", remaining)
+        st.metric("Reviewed Samples", reviewed)
+        
+        # Feedback stats
         if not st.session_state.feedback_df.empty:
-            total = len(st.session_state.feedback_df)
             corrections = sum(
                 st.session_state.feedback_df['model_pred'] != 
                 st.session_state.feedback_df['human_label']
             )
-            st.metric("Total Reviews", total)
             st.metric("Corrections Made", corrections)
-            st.metric("Correction Rate", f"{corrections/total:.1%}")
+        
+        # Pool reset
+        if st.button("🔄 Reset Sample Pool"):
+            try:
+                # Reload the original data
+                (X_train_vec, _, y_train, _, _, original_texts) = load_data()
+                
+                # Reset all pools
+                st.session_state.X_pool = X_train_vec
+                st.session_state.remaining_texts = original_texts.copy()
+                st.session_state.remaining_indices = np.arange(len(original_texts))
+                
+                # Reinitialize the learner
+                st.session_state.learner = create_active_learner(
+                    X_train_vec[:100],
+                    y_train[:100]
+                )
+                
+                st.success("Sample pool and model reset successfully!")
+            except Exception as e:
+                st.error(f"Reset failed: {str(e)}")
     
     # Main interface tabs
     tab1, tab2 = st.tabs(["💬 Provide Feedback", "📈 Performance Analysis"])
     
     with tab1:
-        st.header("Provide Feedback on Predictions")
+        st.header("Review Messages")
         
-        if st.button("🎯 Get New Message to Review", type="primary"):
-            sample_text = get_new_sample()
-            if sample_text:
-                st.session_state.current_text = sample_text
-            else:
-                st.warning("Could not retrieve a message to review")
+        # Get new sample
+        if st.button("🎯 Get New Sample", type="primary"):
+            st.session_state.current_text = get_new_sample()
+            st.session_state.show_correction = False
         
+        # Current sample display
         if hasattr(st.session_state, 'current_text') and st.session_state.current_text:
             with st.expander("📩 Current Message", expanded=True):
                 st.write(st.session_state.current_text)
@@ -153,7 +189,7 @@ def main():
                         **Confidence:** {confidence:.1%}
                     """, unsafe_allow_html=True)
                     
-                    # Feedback buttons
+                    # Feedback options
                     cols = st.columns(3)
                     with cols[0]:
                         if st.button("👍 Correct", help="Confirm the prediction is accurate"):
@@ -176,13 +212,14 @@ def main():
                             st.session_state.show_correction = True
                     
                     with cols[2]:
-                        if st.button("⏭ Skip", help="Skip this message if unsure"):
+                        if st.button("⏭ Skip", help="Skip this message"):
                             st.info("Message skipped")
                             st.session_state.current_text = None
                     
+                    # Correction interface
                     if st.session_state.get('show_correction', False):
                         correction = st.radio(
-                            "What is the correct label?",
+                            "Correct label:",
                             ['HAM (not spam)', 'SPAM'],
                             horizontal=True
                         )
@@ -190,7 +227,7 @@ def main():
                         if st.button("Submit Correction"):
                             corrected_label = 1 if 'SPAM' in correction else 0
                             
-                            # Teach the learner
+                            # Teach the model
                             st.session_state.learner.teach(
                                 X_vec.toarray(),
                                 np.array([corrected_label])
@@ -214,10 +251,10 @@ def main():
                             st.session_state.current_text = None
                 
                 except Exception as e:
-                    st.error(f"Error processing message: {str(e)}")
+                    st.error(f"Prediction error: {str(e)}")
     
     with tab2:
-        st.header("Model Performance Analysis")
+        st.header("Performance Analysis")
         
         try:
             _, X_test, _, y_test, _, _ = load_data()
@@ -240,12 +277,12 @@ def main():
             # Confusion matrices
             st.subheader("Confusion Matrices")
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
-            plot_confusion_matrix(baseline, X_test, y_test, ax=ax1, title="Baseline Model")
-            plot_confusion_matrix(hitl, X_test, y_test, ax=ax2, title="HITL Model")
+            plot_confusion_matrix(baseline, X_test, y_test, ax=ax1, title="Baseline")
+            plot_confusion_matrix(hitl, X_test, y_test, ax=ax2, title="HITL")
             st.pyplot(fig)
             
         except Exception as e:
-            st.warning(f"Couldn't generate performance analysis: {str(e)}")
+            st.warning(f"Performance analysis unavailable: {str(e)}")
 
 if __name__ == "__main__":
     main()

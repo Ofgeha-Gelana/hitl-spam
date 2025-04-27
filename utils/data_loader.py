@@ -4,31 +4,28 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 def load_data():
-    """Load and preprocess the SMS spam dataset with robust error handling"""
+    """Load and preprocess the SMS spam dataset with robust validation"""
     try:
-        # Load data with explicit encoding
+        # Load and validate data
         df = pd.read_csv('data/spam.csv', encoding='latin-1')
         
-        # Clean and validate data
-        required_columns = ['v1', 'v2']
-        if not all(col in df.columns for col in required_columns):
-            raise ValueError("Data file missing required columns")
+        # Check required columns
+        if not all(col in df.columns for col in ['v1', 'v2']):
+            raise ValueError("Dataset missing required columns 'v1' or 'v2'")
             
-        df = df[required_columns].rename(columns={'v1': 'label', 'v2': 'text'})
+        df = df[['v1', 'v2']].rename(columns={'v1': 'label', 'v2': 'text'})
         df = df.dropna()
         df = df[df['text'].notna() & (df['text'].str.strip() != '')]
         
-        # Verify we have enough data
-        if len(df) < 100:
-            raise ValueError("Insufficient data samples (need at least 100)")
-        
-        # Convert labels
+        # Convert labels and validate
         df['label'] = df['label'].map({'ham': 0, 'spam': 1})
+        if df['label'].isna().any():
+            raise ValueError("Invalid labels found in dataset")
         df['label'] = df['label'].astype(int)
         
-        # Split data (keeping texts as strings)
+        # Split data (keeping original texts)
         X_train, X_test, y_train, y_test = train_test_split(
-            df['text'].astype(str),  # Ensure strings
+            df['text'].astype(str),
             df['label'],
             test_size=0.2,
             random_state=42,
@@ -43,8 +40,8 @@ def load_data():
         return (X_train_vec, X_test_vec,
                 y_train.values, y_test.values,
                 vectorizer,
-                X_train.reset_index(drop=True))  # Return original texts as Series
+                X_train.reset_index(drop=True))  # Return clean text Series
                 
     except Exception as e:
-        print(f"CRITICAL ERROR loading data: {str(e)}")
+        print(f"Data loading failed: {str(e)}")
         raise

@@ -1,0 +1,19 @@
+=== BASELINE MODEL ===
+              precision    recall  f1-score   support
+
+           0       0.97      1.00      0.98       966
+           1       0.99      0.80      0.88       149
+
+    accuracy                           0.97      1115
+   macro avg       0.98      0.90      0.93      1115
+weighted avg       0.97      0.97      0.97      1115
+
+=== HITL MODEL ===
+              precision    recall  f1-score   support
+
+           0       0.87      1.00      0.93       966
+           1       0.00      0.00      0.00       149
+
+    accuracy                           0.87      1115
+   macro avg       0.43      0.50      0.46      1115
+weighted avg       0.75      0.87      0.80      1115
