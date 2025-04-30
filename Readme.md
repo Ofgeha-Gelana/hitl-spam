@@ -68,5 +68,5 @@ To run these experiments locally, follow these steps:
    streamlit run app.py
 
 
-   ## **Blog**
+## **Blog**
 [**How it works**](https://medium.com/@ofgehagelana2019/what-is-human-in-the-loop-hitl-0bd1a3d2d889)
