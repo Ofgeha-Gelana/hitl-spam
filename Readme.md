@@ -32,7 +32,7 @@ A machine learning system that combines AI predictions with human feedback to im
 
 
 
-## ⚙️ Installation
+<!-- ## ⚙️ Installation
 
 1. **Clone the repository**
    ```bash
@@ -40,15 +40,33 @@ A machine learning system that combines AI predictions with human feedback to im
    cd hitl-spam
 
 
----
-   ```bash
    pip install -r requirements.txt
 
    python train_baseline.py
 
    streamlit run app.py
-
+`
 
 
    ## **Essay Question**
 [**Essay**](https://medium.com/@ofgehagelana2019/what-is-human-in-the-loop-hitl-0bd1a3d2d889)
+ -->
+
+
+
+
+## Installation
+To run these experiments locally, follow these steps:
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/Ofgeha-Gelana/Quantum-Computing.git
+   cd Quantum-Computing
+
+   pip install -r requirements.txt
+
+   streamlit run app.py
+
+
+   ## **Blog**
+[**How it works**](https://medium.com/@ofgehagelana2019/what-is-human-in-the-loop-hitl-0bd1a3d2d889)
