@@ -41,6 +41,7 @@ A machine learning system that combines AI predictions with human feedback to im
 
 
 ---
+   ```bash
    pip install -r requirements.txt
 
    python train_baseline.py
