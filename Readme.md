@@ -2,7 +2,7 @@
 
 A machine learning system that combines AI predictions with human feedback to improve spam detection accuracy over time.
 
-![Demo Screenshot](https://via.placeholder.com/800x400?text=HITL+Spam+Classifier+Demo) 
+![Demo Screenshot](https://github.com/Ofgeha-Gelana/hitl-spam/blob/main/results/metrics_comparison.png) 
 *(Replace with actual screenshot after deployment)*
 
 ## Features ✨
