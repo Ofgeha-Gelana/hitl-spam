@@ -47,3 +47,8 @@ A machine learning system that combines AI predictions with human feedback to im
    python train_baseline.py
 
    streamlit run app.py
+
+
+
+   ## **Blog**
+[**How it Works ?**](https://medium.com/@ofgehagelana2019/what-is-human-in-the-loop-hitl-0bd1a3d2d889)
