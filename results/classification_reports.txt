@@ -11,9 +11,9 @@ weighted avg       0.97      0.97      0.97      1115
 === HITL MODEL ===
               precision    recall  f1-score   support
 
-           0       0.87      1.00      0.93       966
-           1       0.00      0.00      0.00       149
+           0       0.91      1.00      0.95       966
+           1       0.98      0.39      0.56       149
 
-    accuracy                           0.87      1115
-   macro avg       0.43      0.50      0.46      1115
-weighted avg       0.75      0.87      0.80      1115
+    accuracy                           0.92      1115
+   macro avg       0.95      0.69      0.76      1115
+weighted avg       0.92      0.92      0.90      1115
