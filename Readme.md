@@ -16,7 +16,6 @@ A machine learning system that combines AI predictions with human feedback to im
 ## Requirements 📋
 
 - Python 3.8+
-- pip package manager
 
 ## Installation ⚙️
 
