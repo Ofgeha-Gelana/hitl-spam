@@ -17,13 +17,30 @@ A machine learning system that combines AI predictions with human feedback to im
 
 - Python 3.8+
 
-## Installation ⚙️
+<!-- ## Installation ⚙️
 
 1. Clone the repository:
    ```bash
    git clone https://github.com/Ofgeha-Gelana/hitl-spam.git
    cd hitl-spam
 
+   pip install -r requirements.txt
+
+   python train_baseline.py
+
+   streamlit run app.py -->
+
+
+
+## ⚙️ Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Ofgeha-Gelana/hitl-spam.git
+   cd hitl-spam
+
+
+---
    pip install -r requirements.txt
 
    python train_baseline.py
