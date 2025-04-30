@@ -50,5 +50,5 @@ A machine learning system that combines AI predictions with human feedback to im
 
 
 
-   ## **Blog**
-[**How it Works ?**](https://medium.com/@ofgehagelana2019/what-is-human-in-the-loop-hitl-0bd1a3d2d889)
+   ## **Essay Question**
+[**Essay**](https://medium.com/@ofgehagelana2019/what-is-human-in-the-loop-hitl-0bd1a3d2d889)
